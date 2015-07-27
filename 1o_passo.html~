@@ -1,0 +1,135 @@
+<!doctype html>
+
+<html>
+
+<head>
+	<title>Trabalho Asla - Passo 1</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+	<meta charset="utf-8">
+</head>
+
+<body>
+
+	<center><h1>Trabalho final de Visualização da Informação</h1></center>
+
+	<center><div id="svg"></div></center>	
+	
+	<script>
+	
+	
+	var limiteX = 105,
+		limiteY = 68;
+	
+	var grossura = 2; //grossura da linha
+		
+	var fator = 8;
+	
+	var width = fator*limiteX,
+		height = fator*limiteY;
+		
+	var width_total = fator*limiteX + 30,
+		height_total = fator*1.2*limiteY;
+			
+	var linhas_campo = [ 
+				{ x: 0, y: 0},
+				{ x: 0, y: height/2 + 20.16*fator},
+				{ x: 16.5*fator, y: height/2 + 20.16*fator},
+				{ x: 16.5*fator, y: height/2 - 20.16*fator},
+				{ x: 0, y: height/2 - 20.16*fator},
+				{ x: 0, y: height},
+				{ x: width/2, y: height},
+				{ x: width/2, y: 0},
+				{ x: width, y: 0},
+				{ x: width, y: height/2 + 20.16*fator},
+				{ x: width - 16.5*fator, y: height/2 + 20.16*fator},
+				{ x: width - 16.5*fator, y: height/2 - 20.16*fator},
+				{ x: width, y: height/2 - 20.16*fator},
+				{ x: width, y: height},
+				{ x: width/2, y: height},
+				{ x: width/2, y: 0},
+				{ x: 0, y: 0}
+	];
+	
+	var arc = d3.svg.arc()
+		.innerRadius(9.15*fator - 3)
+		.outerRadius(9.15*fator)
+		.startAngle(0)
+		.endAngle(2*Math.PI);
+		
+	d3.csv("conjunto_obs.csv", function(array) {  
+		
+		N = array.length/11;
+		console.log(N)
+		
+		var scaleX = d3.scale.linear()
+			.domain([0,limiteX])
+			.range([0,width]);
+						
+		var scaleY = d3.scale.linear()
+			.domain([0,limiteY])
+			.range([0,height]);
+								
+		var canvas = d3.select("#svg")
+		.append("svg")
+		.attr("width", width_total)
+		.attr("height", height_total)
+		.append("g")
+			.attr("transform","translate(20,20)");
+		
+		var line = d3.svg.line()
+			.x( function(d) {return d.x;})
+			.y( function(d) {return d.y;});
+					
+		var linhas = canvas.selectAll("path")
+			.data([linhas_campo])
+			.enter()
+				.append("g");
+		
+		
+		var circle = canvas.selectAll("circle")
+			.data(array.slice(0,array.length/N))
+			.enter()
+				.append("circle")
+				.attr("cx", function(d) {return scaleX(d.x_pos);})
+				.attr("cy", function(d) {return scaleY(d.y_pos);})
+				.attr("r", 6)
+				.attr("fill", "black");
+		
+		console.log(circle)
+		
+		
+		for (var i = 1; i < N; i++) {
+		
+				canvas.selectAll("circle")
+					
+					.data(array.slice(i*array.length/N, (i+1)*array.length/N))
+					.transition()
+					.delay(1000*i)
+					.duration(1000)
+					.attr("cx", function(d) {return scaleX(d.x_pos);})
+					.attr("cy", function(d) {return scaleY(d.y_pos);});
+		}
+			
+		var meioX = width/2,
+			meioY = height/2;
+			
+		canvas.append("path")
+			.attr("d",arc)
+			.attr("transform", "translate(420,272)")
+			.attr("fill", "lightgray");
+
+		linhas.append("path")
+			.attr("d", line)
+			.attr("fill", "none")
+			.attr("stroke", "lightgray")
+			.attr("stroke-width", grossura);
+	
+	});
+	
+	
+	</script>
+	
+	
+</body>
+
+</html>

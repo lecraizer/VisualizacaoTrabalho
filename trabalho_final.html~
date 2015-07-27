@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+    <title>Visualização da Informação</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+    <meta charset="utf-8">
+<head>
+<body>
+    <center><h1>Trabalho final de Visualização da Informação</h1></center>
+
+    <center><div id="svg"></div></center>
+
+    <script>
+        var svg = d3.select("#svg")
+                    .append("svg")
+                    .attr("width", 200)
+                    .attr("height", 200);
+
+        svg.append("circle")
+           .attr("cx", 50)
+           .attr("cy", 50)
+           .attr("r", 50)
+           .text("fill","red");
+
+
+         var ew = 10;
+    </script>
+
+    <button id="Play" style="height:100px;width:100px">Click me!</button>
+
+</body>
+</html>

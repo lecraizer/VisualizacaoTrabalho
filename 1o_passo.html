@@ -1,0 +1,186 @@
+<!doctype html>
+
+<html>
+
+<head>
+	<title>Trabalho Asla - Passo 1</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+	<meta charset="utf-8">
+</head>
+
+<body>
+
+	<center><h1>Trabalho final de Visualização da Informação</h1></center>
+
+	<center><div id="svg"></div></center>	
+	
+	<script>
+        //hora
+        lastTime =  new Date();
+        
+        //estado da animação
+        var estado = "paused";
+        
+        //frame represente o quanto andou entre um pause e play e frame total é aonde está a tela no momento
+        var frame = 0;
+        var frame_total = 0;
+        
+        //csv que estamos usando no momento
+        var path = "2013-11-03_tromso_stromsgodset_first.csv"
+        var array;
+        
+        var limiteX = 105,
+            limiteY = 68;
+        
+        //Pega a nossa base de dados
+        d3.csv(path, function(error, data) {
+            if (error) return console.warn(error);
+            array = data;
+            //Faz o desenho inicial posicionando os jogadores        
+            //Adiciona os jogadores na primeira posição
+            canvas.selectAll("circle")
+                .data(array.slice(0,11))
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {return scaleX(d.x_pos);})
+                    .attr("cy", function(d) {return scaleY(d.y_pos);})
+                    .attr("id", function(d, i){return  "n." +d.ID; })
+                    .attr("r", 6)
+                    .attr("fill", "black");
+
+            });
+        
+        var grossura = 2; //grossura da linha
+
+        var fator = 8;
+
+        var width = fator*limiteX,
+            height = fator*limiteY;
+
+        var width_total = fator*limiteX + 30,
+            height_total = fator*1.2*limiteY;
+        
+        //Nosso canvas que iremos desenhas
+        var canvas = d3.select("#svg")
+                        .append("svg")
+                        .attr("width", width_total)
+                        .attr("height", height_total)
+                        .append("g")
+                        .attr("transform","translate(5,5)");
+        
+        //Nossos transformadores para a escala correta
+        var scaleX = d3.scale.linear()
+                .domain([0,limiteX])
+                .range([0,width]);
+
+        var scaleY = d3.scale.linear()
+            .domain([0,limiteY])
+            .range([0,height]);
+
+        var linhas_campo = [ 
+                    { x: 0, y: 0},
+                    { x: 0, y: height/2 + 20.16*fator},
+                    { x: 16.5*fator, y: height/2 + 20.16*fator},
+                    { x: 16.5*fator, y: height/2 - 20.16*fator},
+                    { x: 0, y: height/2 - 20.16*fator},
+                    { x: 0, y: height},
+                    { x: width/2, y: height},
+                    { x: width/2, y: 0},
+                    { x: width, y: 0},
+                    { x: width, y: height/2 + 20.16*fator},
+                    { x: width - 16.5*fator, y: height/2 + 20.16*fator},
+                    { x: width - 16.5*fator, y: height/2 - 20.16*fator},
+                    { x: width, y: height/2 - 20.16*fator},
+                    { x: width, y: height},
+                    { x: width/2, y: height},
+                    { x: width/2, y: 0},
+                    { x: 0, y: 0}
+        ];
+        
+        //Arco do meio de campo
+        var arc = d3.svg.arc()
+            .innerRadius(9.15*fator - 3)
+            .outerRadius(9.15*fator)
+            .startAngle(0)
+            .endAngle(2*Math.PI);
+        
+        var line = d3.svg.line()
+                .x( function(d) {return d.x;})
+                .y( function(d) {return d.y;});
+        
+        //Adiciona o arco do meio de campo
+        canvas.append("path")
+            .attr("d",arc)
+            .attr("transform", "translate(420,272)")
+            .attr("fill", "lightgray");
+            
+        //Adiciona as linhas de campo
+        canvas.append("path")
+            .attr("d", line(linhas_campo))
+            .attr("stroke", "lightgray")                            
+            .attr("stroke-width", grossura)                           
+            .attr("fill", "none");
+        
+        
+        
+	
+        //Listener do botao
+        function play(){
+            
+            if (estado == "play") {
+                estado = "paused";
+                
+                //Quantos frames foram até o momento e quantos frames foram entre o play e pause
+                frame = Math.floor((new Date() - lastTime)/50) + frame_total;
+                console.log(frame);
+                frame_total += Math.floor((new Date() - lastTime)/50); 
+                console.log(frame_total);
+                
+                //d3 para a transição antiga se fazer uma transição nova
+                canvas.selectAll("circle")
+                     .each(function(d,i){
+                         d3.select(this)
+                           .transition()
+                           .duration(0);});
+                
+                d3.select("#button").text("Play");
+            } else {
+                
+                estado = "play";
+                d3.select("#button").text("Pause");
+                console.log(estado);
+                var novo = 0;
+
+                while (frame < array.length) {
+
+                    var N = 0;
+                    while((array[frame]["TimeStamp"] == array[frame+N]["TimeStamp"])){
+                          N += 1;
+                    }
+
+                    canvas.selectAll("circle")
+                        .data(array.slice(frame, frame+N), function(d){return d.ID;})
+                        .transition()
+                        .delay(novo*20)
+                        .duration(20)
+                        .attr("cx", function(d) {return scaleX(d.x_pos);})
+                        .attr("cy", function(d) {return scaleY(d.y_pos);});
+
+
+                    frame += N;
+                    novo += 1;
+                    }
+                    
+                lastTime =  new Date();
+    
+            }
+        }
+        
+	</script>
+    
+    <center><button id="button" onclick="play()" style="height:100px;width:100px">Play</button></center>
+	
+	
+</body>
+
+</html>
