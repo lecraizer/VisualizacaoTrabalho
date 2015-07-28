@@ -11,10 +11,15 @@
 <body>
 
 	<center><h1>Trabalho final de Visualização da Informação</h1></center>
-
-	<center><div id="svg"></div></center>	
+	
+	<div id="container" style="width:100%;overflow:auto">
+		<div id="tempo_de_jogo" style="float:left;width:25%"></div>
+		<div id="svg" style="float:left;width:50%"></div>
+	
+	</div>
 	
 	<script>
+	
         //hora
         lastTime =  new Date();
         
@@ -28,6 +33,9 @@
         
         //csv que estamos usando no momento
         var path = "primeiro_tempo_casa_100mili.csv"
+		
+		var path_10min = "primeiro_tempo_casa_100mili_10min.csv"
+		
         var array;
         //Tempo de 1 segundo
         var tempo = 100;
@@ -36,7 +44,7 @@
             limiteY = 68;
         
         //Pega a nossa base de dados
-        d3.csv(path, function(error, data) {
+        d3.csv(path_10min, function(error, data) {
             if (error) return console.warn(error);
             N = data.length/14;
             array = data;
@@ -48,14 +56,14 @@
                     .append("circle")
                     .attr("cx", function(d) {return scaleX(d.x_pos);})
                     .attr("cy", function(d) {return scaleY(d.y_pos);})
-                    .attr("id", function(d, i){return  "n." +d.ID; })
+                    .attr("id", function(d, i){return  "n." +d.ID; })	
                     .attr("r", 6)
 					.attr("stroke", "black")
 					.attr("stroke-width", 2)
                     .attr("fill", "rgb(100,0,0)");
-
+			
             });
-        
+		
         var grossura = 2; //grossura da linha
 
         var fator = 8;
@@ -233,8 +241,6 @@
             .attr("stroke-width", grossura)                           
             .attr("fill", "none");
         
-        
-        
 	
         //Listener do botao
         function play(){
@@ -244,9 +250,7 @@
                 
                 //Quantos frames foram até o momento e quantos frames foram entre o play e pause
                 frame = Math.floor((new Date() - lastTime)/tempo) + frame_total;
-                console.log(frame);
                 frame_total += Math.floor((new Date() - lastTime)/tempo); 
-                console.log(frame_total);
                 
                 //d3 para a transição antiga se fazer uma transição nova
                 canvas.selectAll("circle")
@@ -254,9 +258,16 @@
                          d3.select(this)
                            .transition()
                            .duration(0);});
+						   
+				canvas_dir.select("#texto_tempo")
+						.each(function(d,i){
+                         d3.select(this)
+                           .transition()
+                           .duration(0);});
                 
-                d3.select("#button").text("Play");
-            } else {
+                d3.select("#button").text("Play");	
+            } 
+			else {
                 
                 estado = "play";
                 d3.select("#button").text("Pause");
@@ -272,10 +283,21 @@
                         .duration(tempo)
                         .attr("cx", function(d) {return scaleX(d.x_pos);})
                         .attr("cy", function(d) {return scaleY(d.y_pos);});
+						
+					canvas_dir.select("#texto_tempo")
+						.data(array.slice(frame*14, frame*14+14))
+                        .transition()
+						.delay(novo*tempo)
+                        .duration(tempo)
+						.text(function(d) {return d.TimeStamp;})
 
 
                     frame += 1;
                     novo += 1;
+					
+					
+					
+					console.log(tempo);
                     }
                     
                 lastTime =  new Date();
@@ -283,11 +305,40 @@
             }
         }
         
+		var width_esq = 500
+		
+		var canvas_dir = d3.select("#tempo_de_jogo")
+                        .append("svg")
+                        .attr("width", width_esq)
+                        .attr("height", height_total)
+                        .append("g")
+                        .attr("transform","translate(5,5)");
+		
+		var rectangle = canvas_dir.append("rect")
+			.attr("height", 80)
+			.attr("width", 200)
+			.attr("y",0)
+			.attr("x", width_esq/4)
+			.attr("fill","white")
+			.attr("stroke", "black")
+			.attr("stroke-width",3);
+			
+		var texto_x = 100 +(width_esq/4)
+			
+		canvas_dir.append("text")
+			.text("00:00")
+			.attr("text-anchor","middle")
+			.attr("font-size",30)
+			.attr("id", "texto_tempo")
+			.attr("transform", "translate("+ texto_x +",40)");
+			
+		
 	</script>
-    
-    <center><button id="button" onclick="play()" style="height:100px;width:100px">Play</button></center>
+    <div>
+    <center><button id="button" onclick="play()" style="height:100px;width:100px;" >Play</button></center>
+	</div>
 	
-	
+
 </body>
 
 </html>
