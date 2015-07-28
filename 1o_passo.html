@@ -27,6 +27,7 @@
         
         //csv que estamos usando no momento
         var path = "2013-11-03_tromso_stromsgodset_first.csv"
+		var path2 = "conjunto_obs3.csv"
         var array;
         
         var limiteX = 105,
@@ -46,7 +47,9 @@
                     .attr("cy", function(d) {return scaleY(d.y_pos);})
                     .attr("id", function(d, i){return  "n." +d.ID; })
                     .attr("r", 6)
-                    .attr("fill", "black");
+					.attr("stroke", "black")
+					.attr("stroke-width", 2)
+                    .attr("fill", "rgb(100,0,0)");
 
             });
         
@@ -60,7 +63,7 @@
         var width_total = fator*limiteX + 30,
             height_total = fator*1.2*limiteY;
         
-        //Nosso canvas que iremos desenhas
+        //Nosso canvas que iremos desenhar
         var canvas = d3.select("#svg")
                         .append("svg")
                         .attr("width", width_total)
@@ -79,6 +82,10 @@
 
         var linhas_campo = [ 
                     { x: 0, y: 0},
+					{ x: 0, y: height/2 + 9.16*fator},
+					{ x: 5.5*fator, y: height/2 + 9.16*fator},
+					{ x: 5.5*fator, y: height/2 - 9.16*fator},
+					{ x: 0, y: height/2 - 9.16*fator},
                     { x: 0, y: height/2 + 20.16*fator},
                     { x: 16.5*fator, y: height/2 + 20.16*fator},
                     { x: 16.5*fator, y: height/2 - 20.16*fator},
@@ -87,6 +94,10 @@
                     { x: width/2, y: height},
                     { x: width/2, y: 0},
                     { x: width, y: 0},
+					{ x: width, y: height/2 + 9.16*fator},
+					{ x: width - 5.5*fator, y: height/2 + 9.16*fator},
+					{ x: width - 5.5*fator, y: height/2 - 9.16*fator},
+					{ x: width, y: height/2 - 9.16*fator},
                     { x: width, y: height/2 + 20.16*fator},
                     { x: width - 16.5*fator, y: height/2 + 20.16*fator},
                     { x: width - 16.5*fator, y: height/2 - 20.16*fator},
@@ -97,23 +108,121 @@
                     { x: 0, y: 0}
         ];
         
+		//Bandeira escanteio (0,0)
+		var band_escanteio = d3.svg.arc()
+            .innerRadius(fator - 3)
+            .outerRadius(fator)
+            .startAngle(Math.PI/2)
+            .endAngle(Math.PI);
+		
+		//Bandeira escanteio (0,68)
+		var band_escanteio2 = d3.svg.arc()
+            .innerRadius(fator - 3)
+            .outerRadius(fator)
+            .startAngle(0)
+            .endAngle(Math.PI/2);
+		
+		//Bandeira escanteio (105,0)		
+		var band_escanteio3 = d3.svg.arc()
+            .innerRadius(fator - 3)
+            .outerRadius(fator)
+            .startAngle(Math.PI)
+            .endAngle(3*Math.PI/2);
+			
+		//Bandeira escanteio (105,68)	
+		var band_escanteio4 = d3.svg.arc()
+            .innerRadius(fator - 3)
+            .outerRadius(fator)
+            .startAngle(3*Math.PI/2)
+            .endAngle(2*Math.PI);
+			
         //Arco do meio de campo
-        var arc = d3.svg.arc()
+        var arco_central = d3.svg.arc()
             .innerRadius(9.15*fator - 3)
             .outerRadius(9.15*fator)
             .startAngle(0)
             .endAngle(2*Math.PI);
         
+		//Arco de meia lua área esquerda
+		var meia_lua = d3.svg.arc()
+			.innerRadius(9.15*fator - 3)
+            .outerRadius(9.15*fator)
+            .startAngle(0.645)
+            .endAngle(Math.PI - 0.645);
+		
+		//Arco de meia lua área direita
+		var meia_lua2 = d3.svg.arc()
+			.innerRadius(9.15*fator - 3)
+            .outerRadius(9.15*fator)
+            .startAngle(-0.645)
+            .endAngle(-Math.PI + 0.645);		
+			
+		//Bolinha da marca do penalti e central
+		var marca_penalti = d3.svg.arc()
+			.innerRadius(0)
+            .outerRadius(0.6*fator)
+            .startAngle(0)
+            .endAngle(2*Math.PI);
+		
+		//Função para desenhar as linhas do campo
         var line = d3.svg.line()
                 .x( function(d) {return d.x;})
                 .y( function(d) {return d.y;});
         
         //Adiciona o arco do meio de campo
         canvas.append("path")
-            .attr("d",arc)
+            .attr("d",arco_central)
             .attr("transform", "translate(420,272)")
             .attr("fill", "lightgray");
-            
+        
+		//Adiciona bandeiras do escanteio
+		canvas.append("path")
+            .attr("d",band_escanteio)
+            .attr("fill", "lightgray");
+		
+		canvas.append("path")
+            .attr("d",band_escanteio2)
+            .attr("transform", "translate(0,544)")
+            .attr("fill", "lightgray");
+			
+		canvas.append("path")
+            .attr("d",band_escanteio3)
+            .attr("transform", "translate(840,0)")
+            .attr("fill", "lightgray");
+			
+		canvas.append("path")
+            .attr("d",band_escanteio4)
+            .attr("transform", "translate(840,544)")
+            .attr("fill", "lightgray");
+			
+		//Adiciona as marcas do penalti
+        canvas.append("path")
+            .attr("d",marca_penalti)
+            .attr("transform", "translate(88,272)")
+            .attr("fill", "lightgray");
+		
+		canvas.append("path")
+            .attr("d",marca_penalti)
+            .attr("transform", "translate(752,272)")
+            .attr("fill", "lightgray");
+		
+		canvas.append("path")
+            .attr("d",marca_penalti)
+            .attr("transform", "translate(420,272)")
+            .attr("fill", "lightgray");
+		
+		//Adiciona meia lua
+		
+		canvas.append("path")
+            .attr("d",meia_lua)
+            .attr("transform", "translate(88,272)")
+            .attr("fill", "lightgray");
+			
+		canvas.append("path")
+            .attr("d",meia_lua2)
+            .attr("transform", "translate(752,272)")
+            .attr("fill", "lightgray");
+			
         //Adiciona as linhas de campo
         canvas.append("path")
             .attr("d", line(linhas_campo))
