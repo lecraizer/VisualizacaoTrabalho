@@ -15,6 +15,7 @@
 	<div id="container" style="width:100%;overflow:auto">
 		<div id="tempo_de_jogo" style="float:left;width:25%"></div>
 		<div id="svg" style="float:left;width:50%"></div>
+		<div id="painel_dos_jogadores" style="float:left;width:25%"></div>
 	
 	</div>
 	
@@ -22,11 +23,18 @@
 	
         //hora
         lastTime =  new Date();
+		
+		//dicionário que retorna index do jogador clicado
+		var dict = {};
+		var ids_jogadores = [11,6,3,2,5,7,8,9,10,12,13,14,15,1];
+		for (var i = 0; i < ids_jogadores.length; i++){
+		dict[ids_jogadores[i]] = i;
+		}
         
         //estado da animação
         var estado = "paused";
         
-        //frame represente o quanto andou entre um pause e play e frame total é aonde está a tela no momento e N é o numero de frames possíveis
+        //frame representa o quanto andou entre um pause e play e frame total é aonde está a tela no momento e N é o numero de frames possíveis
         var frame = 0;
         var frame_total = 0;
         var N;
@@ -43,6 +51,9 @@
         var limiteX = 105,
             limiteY = 68;
         
+		var fator = 8;
+		
+		
         //Pega a nossa base de dados
         d3.csv(path_10min, function(error, data) {
             if (error) return console.warn(error);
@@ -50,23 +61,81 @@
             array = data;
             //Faz o desenho inicial posicionando os jogadores        
             //Adiciona os jogadores na primeira posição
-            canvas.selectAll("circle")
-                .data(array.slice(0,14))
-                    .enter()
-                    .append("circle")
+            var elem = canvas.selectAll("circle")
+						.data(array.slice(0,14))
+					
+			var elemEnter = elem.enter()
+				.append("g")
+				
+			var circles = elemEnter.append("circle")
                     .attr("cx", function(d) {return scaleX(d.x_pos);})
                     .attr("cy", function(d) {return scaleY(d.y_pos);})
                     .attr("id", function(d, i){return  "n." +d.ID; })	
                     .attr("r", 6)
 					.attr("stroke", "black")
 					.attr("stroke-width", 2)
-                    .attr("fill", "rgb(100,0,0)");
-			
-            });
+                    .attr("fill", "rgb(100,0,0)")
+			/*
+			elemEnter.append("text")
+				.attr("dx", function(d){return scaleX(d.x_pos);})
+				.attr("dy", function(d){return scaleY(d.y_pos);})
+				.text(function(d){return d.ID})
+					
+			*/		
+					//Eventos com cliques de mouse e mouse por cima
+					.on("mouseover", function(){d3.select(this).style("fill", "rgb(255,0,0)");})
+					.on("mouseout", function(){d3.select(this).style("fill", "rgb(100,0,0)");})
+					.on("click", function(d){
+					    frame = Math.floor((new Date() - lastTime)/tempo) + frame_total
+						console.log(frame)
+						canvas.selectAll("circle").style("opacity", 10)
+						d3.select(this).style("fill", "rgb(255,0,0)")
+						
+						
+						canvas_dir.select("#painel")
+							.transition()
+							.duration(100)
+							.attr("stroke","black");
+							
+						canvas_dir.select("#texto_id")
+							.transition()
+							.duration(100)
+							.text("Jogador ID: " + array.slice(frame*14, frame*14+14)[dict[d.ID]].ID)
+							.attr("fill","black");
+						
+						canvas_dir.select("#texto_energy")
+							.transition()
+							.duration(100)
+							.text("Energia gasta: " + array.slice(frame*14, frame*14+14)[dict[d.ID]].Energy)
+							.attr("fill","black");					
+						
+						canvas_dir.select("#texto_speed")
+							.transition()
+							.duration(100)
+							.text("Velocidade: " + + array.slice(frame*14, frame*14+14)[dict[d.ID]].Speed)
+							.attr("fill","black");
+							
+						canvas_dir.select("#texto_totaldist")
+							.transition()
+							.duration(100)
+							.text("Distância total: " + array.slice(frame*14, frame*14+14)[dict[d.ID]].Total_dist)
+							.attr("fill","black");						
+						
+						})
+					
+					//double click do mouse	
+					
+					.on("dblclick", function(d){
+						canvas.selectAll("circle").style("opacity", 0.5)
+						d3.select(this).style("opacity", 10)
+						
+						})
+								
+					
+		   });
 		
         var grossura = 2; //grossura da linha
 
-        var fator = 8;
 
         var width = fator*limiteX,
             height = fator*limiteY;
@@ -81,7 +150,8 @@
                         .attr("height", height_total)
                         .append("g")
                         .attr("transform","translate(5,5)");
-        
+						
+										
         //Nossos transformadores para a escala correta
         var scaleX = d3.scale.linear()
                 .domain([0,limiteX])
@@ -177,8 +247,8 @@
 		
 		//Função para desenhar as linhas do campo
         var line = d3.svg.line()
-                .x( function(d) {return d.x;})
-                .y( function(d) {return d.y;});
+			.x( function(d) {return d.x;})
+			.y( function(d) {return d.y;});
         
         //Adiciona o arco do meio de campo
         canvas.append("path")
@@ -259,45 +329,47 @@
                            .transition()
                            .duration(0);});
 						   
-				canvas_dir.select("#texto_tempo")
-						.each(function(d,i){
+				canvas_esq.select("#texto_tempo")
+					.each(function(d,i){
                          d3.select(this)
                            .transition()
                            .duration(0);});
                 
+				
                 d3.select("#button").text("Play");	
             } 
 			else {
                 
                 estado = "play";
                 d3.select("#button").text("Pause");
-                console.log(estado);
                 var novo = 0;
 
                 while (frame < N) {
-
+					
+					A = array.slice(frame*14, frame*14+14)
+					
                     canvas.selectAll("circle")
-                        .data(array.slice(frame*14, frame*14+14), function(d){return d.ID;})
+                        .data(A, function(d){return d.ID;})
                         .transition()
                         .delay(novo*tempo)
                         .duration(tempo)
                         .attr("cx", function(d) {return scaleX(d.x_pos);})
-                        .attr("cy", function(d) {return scaleY(d.y_pos);});
-						
-					canvas_dir.select("#texto_tempo")
-						.data(array.slice(frame*14, frame*14+14))
+                        .attr("cy", function(d) {return scaleY(d.y_pos);})
+					
+			
+					canvas_esq.select("#texto_tempo")
+						.data(A)
                         .transition()
 						.delay(novo*tempo)
                         .duration(tempo)
 						.text(function(d) {return d.TimeStamp;})
+		
 
 
+					
                     frame += 1;
                     novo += 1;
 					
-					
-					
-					console.log(tempo);
                     }
                     
                 lastTime =  new Date();
@@ -305,16 +377,19 @@
             }
         }
         
+		
+		
+		// Tempo de jogo na div esquerda
 		var width_esq = 500
 		
-		var canvas_dir = d3.select("#tempo_de_jogo")
+		var canvas_esq = d3.select("#tempo_de_jogo")
                         .append("svg")
                         .attr("width", width_esq)
                         .attr("height", height_total)
                         .append("g")
                         .attr("transform","translate(5,5)");
 		
-		var rectangle = canvas_dir.append("rect")
+		var tempo_jogo = canvas_esq.append("rect")
 			.attr("height", 80)
 			.attr("width", 200)
 			.attr("y",0)
@@ -323,16 +398,76 @@
 			.attr("stroke", "black")
 			.attr("stroke-width",3);
 			
-		var texto_x = 100 +(width_esq/4)
+		var texto_x = 100 + (width_esq/4)
 			
-		canvas_dir.append("text")
+		canvas_esq.append("text")
 			.text("00:00")
 			.attr("text-anchor","middle")
 			.attr("font-size",30)
 			.attr("id", "texto_tempo")
 			.attr("transform", "translate("+ texto_x +",40)");
-			
 		
+
+
+		
+		// Painel dos jogadores à direita
+		var width_dir = 440
+		
+		var canvas_dir = d3.select("#painel_dos_jogadores")
+                        .append("svg")
+                        .attr("width", width_dir)
+                        .attr("height", height_total)
+                        .append("g")
+                        .attr("transform","translate(5,5)");
+		
+		
+		
+		//Criação de textos no painel dos jogadores
+
+			canvas_dir.append("rect")
+				.attr("height", 400)
+				.attr("width", 400)
+				.attr("y",0)
+				.attr("x", 0)
+				.attr("id", "painel")
+				.attr("fill","white")
+				.attr("stroke", "white")
+				.attr("stroke-width",3);
+				
+			canvas_dir.append("text")
+				.html("ID: 0.0")
+				.attr("text-anchor","middle")
+				.attr("font-size",30)
+				.attr("id", "texto_id")
+				.attr("transform", "translate(200,40)")
+				.attr("fill","white");
+	
+			canvas_dir.append("text")
+					.html("Energia gasta: 0.0")
+					.attr("text-anchor","middle")
+					.attr("font-size",30)
+					.attr("id", "texto_energy")
+					.attr("transform", "translate(200,120)")
+					.attr("fill","white");
+				
+			canvas_dir.append("text")
+				.html("Velocidade: 0.0")
+				.attr("text-anchor","middle")
+				.attr("font-size",30)
+				.attr("id", "texto_speed")
+				.attr("transform", "translate(200,160)")
+				.attr("fill","white");
+				
+			canvas_dir.append("text")
+				.html("Distância total: 0.0")
+				.attr("text-anchor","middle")
+				.attr("font-size",30)
+				.attr("id", "texto_totaldist")
+				.attr("transform", "translate(200,200)")
+				.attr("fill","white");			
+
+			
+			
 	</script>
     <div>
     <center><button id="button" onclick="play()" style="height:100px;width:100px;" >Play</button></center>
