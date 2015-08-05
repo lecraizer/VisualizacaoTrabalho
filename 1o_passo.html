@@ -23,6 +23,7 @@
 	
         //hora
         lastTime =  new Date();
+        var timer;
 		
 		//dicionário que retorna index do jogador clicado
 		var dict = {};
@@ -61,33 +62,43 @@
             array = data;
             //Faz o desenho inicial posicionando os jogadores        
             //Adiciona os jogadores na primeira posição
+            var semVisao = d3.svg.arc()
+                            .innerRadius(0)
+                            .outerRadius(1000);
+            
+            var arcos = canvas.selectAll("Arcos")
+                                .data(array.slice(0,14))
+                                .enter()
+                                .append("path")
+                                .attr("class", "arcos")
+                                .each(function(d) { d.endAngle = d.Heading + 4;
+                                                    d.startAngle = d.Heading - 4;})
+                                .attr("d",semVisao)
+                                .attr("id", function(d, i){return  "n" + d.ID; })
+                                .attr("transform", function(d){return "translate("+ scaleX(d.x_pos) + "," + scaleY(d.y_pos) + ")";})
+                                .attr("fill", "lightgray")
+                                .style("fill-opacity", 0.1);
+            
             var elem = canvas.selectAll("circle")
 						.data(array.slice(0,14))
 					
 			var elemEnter = elem.enter()
 				.append("g")
+            
+            
 				
 			var circles = elemEnter.append("circle")
                     .attr("cx", function(d) {return scaleX(d.x_pos);})
                     .attr("cy", function(d) {return scaleY(d.y_pos);})
-                    .attr("id", function(d, i){return  "n." +d.ID; })	
+                    .attr("id", function(d, i){return d.ID; })	
                     .attr("r", 6)
 					.attr("stroke", "black")
 					.attr("stroke-width", 2)
                     .attr("fill", "rgb(100,0,0)")
-			/*
-			elemEnter.append("text")
-				.attr("dx", function(d){return scaleX(d.x_pos);})
-				.attr("dy", function(d){return scaleY(d.y_pos);})
-				.text(function(d){return d.ID})
-					
-			*/		
 					//Eventos com cliques de mouse e mouse por cima
 					.on("mouseover", function(){d3.select(this).style("fill", "rgb(255,0,0)");})
 					.on("mouseout", function(){d3.select(this).style("fill", "rgb(100,0,0)");})
 					.on("click", function(d){
-					    frame = Math.floor((new Date() - lastTime)/tempo) + frame_total
-						console.log(frame)
 						canvas.selectAll("circle").style("opacity", 10)
 						d3.select(this).style("fill", "rgb(255,0,0)")
 						
@@ -125,13 +136,18 @@
 					
 					//double click do mouse	
 					
-					.on("dblclick", function(d){
-						canvas.selectAll("circle").style("opacity", 0.5)
-						d3.select(this).style("opacity", 10)
-						
+					.on("dblclick", function(d){   
+                        var jogador_alvo = d.ID
+						d3.selectAll(".arcos").style("fill-opacity", function(d){if(d.ID == jogador_alvo) {return 0.5} else{return 0}});
 						})
-								
+            
+            /*
+			elemEnter.append("text")
+				.attr("dx", function(d){return scaleX(d.x_pos);})
+				.attr("dy", function(d){return scaleY(d.y_pos);})
+				.text(function(d){return d.ID})
 					
+			*/		
 		   });
 		
         var grossura = 2; //grossura da linha
@@ -160,6 +176,7 @@
         var scaleY = d3.scale.linear()
             .domain([0,limiteY])
             .range([0,height]);
+    
 
         var linhas_campo = [ 
                     { x: 0, y: 0},
@@ -313,71 +330,50 @@
         
 	
         //Listener do botao
-        function play(){
-            
-            if (estado == "play") {
-                estado = "paused";
-                
-                //Quantos frames foram até o momento e quantos frames foram entre o play e pause
-                frame = Math.floor((new Date() - lastTime)/tempo) + frame_total;
-                frame_total += Math.floor((new Date() - lastTime)/tempo); 
-                
-                //d3 para a transição antiga se fazer uma transição nova
-                canvas.selectAll("circle")
-                     .each(function(d,i){
-                         d3.select(this)
-                           .transition()
-                           .duration(0);});
-						   
-				canvas_esq.select("#texto_tempo")
-					.each(function(d,i){
-                         d3.select(this)
-                           .transition()
-                           .duration(0);});
-                
-				
-                d3.select("#button").text("Play");	
-            } 
-			else {
-                
-                estado = "play";
-                d3.select("#button").text("Pause");
-                var novo = 0;
-
-                while (frame < N) {
-					
-					A = array.slice(frame*14, frame*14+14)
-					
-                    canvas.selectAll("circle")
-                        .data(A, function(d){return d.ID;})
-                        .transition()
-                        .delay(novo*tempo)
-                        .duration(tempo)
-                        .attr("cx", function(d) {return scaleX(d.x_pos);})
-                        .attr("cy", function(d) {return scaleY(d.y_pos);})
-					
-			
-					canvas_esq.select("#texto_tempo")
-						.data(A)
-                        .transition()
-						.delay(novo*tempo)
-                        .duration(tempo)
-						.text(function(d) {return d.TimeStamp;})
-		
-
-
-					
-                    frame += 1;
-                    novo += 1;
-					
-                    }
-                    
-                lastTime =  new Date();
-    
+        function gamePlay(){
+            if (estado == "paused") {
+                timer = setInterval(play,100);
+            } else {
+                clearInterval(timer);
+                pause();
             }
+            }
+        
+        //Enquanto estiver em Play
+        function play(){
+            estado = "play";
+            d3.select("#button").text("Pause");
+
+            A = array.slice(frame*14, frame*14+14)
+
+            canvas.selectAll("circle")
+                .data(A, function(d){return "n." + d.ID;})
+                .transition()
+                .duration(tempo)
+                .attr("cx", function(d) {return scaleX(d.x_pos);})
+                .attr("cy", function(d) {return scaleY(d.y_pos);})
+
+
+            canvas_esq.select("#texto_tempo")
+                .data(A)
+                .transition()
+                .duration(tempo)
+                .text(function(d) {return d.TimeStamp;})
+
+            d3.selectAll(".arcos")
+                .data(A, function(d){return "n" + d.ID;})
+                .transition()
+                .duration(tempo)
+                .attr("transform", function(d){return "translate("+ scaleX(d.x_pos) + "," + scaleY(d.y_pos) + ")";})
+
+            frame += 1;                 
         }
         
-		
+        //Enquanto estiver em Pause
+		function pause(){
+                estado = "paused";
+                d3.select("#button").text("Play");	
+        }
 		
 		// Tempo de jogo na div esquerda
 		var width_esq = 500
@@ -464,13 +460,11 @@
 				.attr("font-size",30)
 				.attr("id", "texto_totaldist")
 				.attr("transform", "translate(200,200)")
-				.attr("fill","white");			
-
-			
-			
+				.attr("fill","white");	
+        
 	</script>
     <div>
-    <center><button id="button" onclick="play()" style="height:100px;width:100px;" >Play</button></center>
+    <center><button id="button" onclick="gamePlay()" style="height:100px;width:100px;" >Play</button></center>
 	</div>
 	
 
